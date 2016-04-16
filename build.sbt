@@ -76,7 +76,8 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.12.4",
   "junit" % "junit" % "4.11",
   "org.eclipse.jetty" % "jetty-util" % "9.3.2.v20150730",
-  "com.novocode" % "junit-interface" % "0.11" % "test->default")
+  "com.novocode" % "junit-interface" % "0.11" % "test->default",
+  "org.mockito" % "mockito-all" % "1.10.19")
 
 // Based on Hadoop Mini Cluster tests from Alpine's PluginSDK (Apache licensed)
 // javax.servlet signing issues can be tricky, we can just exclude the dep
