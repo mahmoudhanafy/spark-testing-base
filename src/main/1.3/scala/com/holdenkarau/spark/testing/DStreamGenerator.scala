@@ -1,9 +1,8 @@
 package com.holdenkarau.spark.testing
 
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.InputDStream
-import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.scalacheck.{Arbitrary, Gen}
 
 import scala.reflect.ClassTag

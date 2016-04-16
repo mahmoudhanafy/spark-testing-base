@@ -17,12 +17,17 @@
 package com.holdenkarau.spark.testing
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SQLContext, Row}
-import org.apache.spark.sql.types.{StringType, StructType, IntegerType, StructField}
+import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.streaming.dstream.{DStream, InputDStream}
+import org.apache.spark.streaming.{Duration, Seconds, StreamingContext}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Prop.forAll
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
+
+import scala.collection.immutable.Queue
+import scala.collection.mutable
 
 class SampleScalaCheckTest extends FunSuite with SharedSparkContext with Checkers {
   // tag::propertySample[]
@@ -125,10 +130,71 @@ class SampleScalaCheckTest extends FunSuite with SharedSparkContext with Checker
   test("generate rdd of specific size") {
     implicit val generatorDrivenConfig =
       PropertyCheckConfig(minSize = 10, maxSize = 20)
-    val prop = forAll(RDDGenerator.genRDD[String](sc)(Arbitrary.arbitrary[String])){
+    val prop = forAll(RDDGenerator.genRDD[String](sc)(Arbitrary.arbitrary[String])) {
       rdd => rdd.count() <= 20
     }
     check(prop)
+  }
+
+  test("test Generating InputDStreams") {
+    val ssc: StreamingContext = new StreamingContext(sc, Seconds(1))
+    val generator: Gen[InputDStream[Int]] = DStreamGenerator.genInputDStream[Int](ssc)(Arbitrary.arbitrary[Int])
+
+    val property =
+      forAll(generator) {
+        stream => {
+          println("hello")
+          stream.saveAsTextFiles("/tmp/hanafy/")
+//          stream.print()
+          ssc.start()
+          ssc.awaitTerminationOrTimeout(10000)
+          ssc.stop(stopSparkContext = false)
+
+          true
+        }
+      }
+
+
+    check(property)
+
+    //    val rdd1 = sc.parallelize(List(1, 2, 3))
+//    val rdd2 = sc.parallelize(List(4, 5, 6))
+//    val rdd3 = sc.parallelize(List(7, 8, 9))
+//    val rddQueue: mutable.Queue[RDD[Int]] = mutable.Queue(rdd1, rdd2, rdd3)
+//    val inputStream: InputDStream[Int] = ssc.queueStream(rddQueue, true)
+
+
+//    inputStream.count().foreachRDD(x => x.foreach(println))
+//    inputStream.foreachRDD(rdd => rdd.foreach(println))
+    //    inputStream.start()
+    //    ssc.start()
+    //    ssc.awaitTerminationOrTimeout(10000)
+    //
+    //
+    //    //    println("Here: " + inputStream.count())
+    //    println("Hereooooooooooooooooooo")
+    //    ssc.stop()
+    //    val x = forAll(listGen.arbitrary) {
+    //        lst =>
+    //      println("List Size: " + lst.size)
+    //      lst.foreach(rdd => {
+    //        println("Count: " + rdd.count)
+    //        println(rdd.collect().mkString(", "))
+    //      })
+    //
+    //      println("==================================")
+    //      lst.reverse.reverse == lst
+    //    }
+    //
+    //    val x = forAll((lst: List[List[Int]]) => {
+    //      println("List Size: " + lst.size)
+    //      lst.foreach(x => {println(x.size)} )
+    //      println("=========================")
+    //      lst.reverse.reverse == lst
+    //    }
+    //    )
+    //
+    //    check(x)
   }
 
   private def filterOne(rdd: RDD[String]): RDD[Int] = {
