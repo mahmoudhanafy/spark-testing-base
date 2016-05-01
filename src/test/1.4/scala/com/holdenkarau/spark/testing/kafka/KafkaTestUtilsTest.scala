@@ -31,7 +31,7 @@ import org.scalatest.junit.JUnitRunner
 import org.apache.spark.streaming.kafka.KafkaTestUtils
 
 @RunWith(classOf[JUnitRunner])
-class KafkaTestUtilsTest extends FunSuite with BeforeAndAfterAll{
+class KafkaTestUtilsTest extends FunSuite with BeforeAndAfterAll {
 
   private var kafkaTestUtils: KafkaTestUtils = _
 
@@ -45,7 +45,7 @@ class KafkaTestUtilsTest extends FunSuite with BeforeAndAfterAll{
     kafkaTestUtils = null
   }
 
-  test("Kafka send and receive message"){
+  test("Kafka send and receive message") {
     val topic = "test-topic"
     val message = "HelloWorld!"
     kafkaTestUtils.createTopic(topic)
@@ -61,18 +61,18 @@ class KafkaTestUtilsTest extends FunSuite with BeforeAndAfterAll{
     consumerProps.put("zookeeper.sync.time.ms", "2000")
     consumerProps.put("auto.commit.interval.ms", "2000")
 
-    val consumer = kafka.consumer.Consumer
-                    .createJavaConsumerConnector(
-                      new ConsumerConfig(consumerProps))
+    val consumer: ConsumerConnector = kafka.consumer.Consumer
+      .createJavaConsumerConnector(
+        new ConsumerConfig(consumerProps))
 
     import scala.collection.JavaConversions._
 
     val topicCountMap = Map(topic -> new Integer(1))
     val consumerMap = consumer.createMessageStreams(topicCountMap)
-    val stream =  consumerMap.get(topic).get(0)
+    val stream = consumerMap.get(topic).get(0)
     val it = stream.iterator()
     val mess = it.next
-    assert( new String(mess.message().map(_.toChar)) === message)
+    assert(new String(mess.message().map(_.toChar)) === message)
   }
 
 }

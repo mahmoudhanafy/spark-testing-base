@@ -19,7 +19,7 @@ package org.apache.spark.streaming.kafka
 
 import java.io.File
 import java.lang.{Integer => JInt}
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.TimeoutException
 import java.util.{Map => JMap, Properties}
 
@@ -49,8 +49,9 @@ import scala.util.control.NonFatal
 class KafkaTestUtils {
 
   // Zookeeper related configurations
-  private val zkHost = "localhost"
-  private var zkPort: Int = 0
+  private val localhost = InetAddress.getLocalHost().getHostName
+  private val zkHost = localhost
+  private var zkPort: Int = 2181
   private val zkConnectionTimeout = 60000
   private val zkSessionTimeout = 6000
 
@@ -59,7 +60,7 @@ class KafkaTestUtils {
   private var zkClient: ZkClient = _
 
   // Kafka broker related configurations
-  private val brokerHost = "localhost"
+  private val brokerHost = localhost
   private var brokerPort = 9092
   private var brokerConf: KafkaConfig = _
 
@@ -118,6 +119,8 @@ class KafkaTestUtils {
 
   /** setup the whole embedded servers, including Zookeeper and Kafka brokers */
   def setup(): Unit = {
+    println("LocalHost: " + localhost)
+
     setupEmbeddedZookeeper()
     setupEmbeddedKafkaServer()
   }
@@ -128,25 +131,41 @@ class KafkaTestUtils {
     zkReady = false
 
     if (producer != null) {
-      producer.close()
-      producer = null
+      try {
+        println("Closing producer...")
+        producer.close()
+      } finally {
+        producer = null
+      }
     }
 
     if (server != null) {
-      server.shutdown()
-      server = null
+      try {
+        println("Closing server...")
+        server.shutdown()
+      } finally {
+        server = null
+      }
     }
 
     brokerConf.logDirs.foreach { f => Utils.deleteRecursively(new File(f)) }
 
     if (zkClient != null) {
-      zkClient.close()
-      zkClient = null
+      try {
+        println("Closing zkClient...")
+        zkClient.close()
+      } finally {
+        zkClient = null
+      }
     }
 
     if (zookeeper != null) {
-      zookeeper.shutdown()
-      zookeeper = null
+      try {
+        println("Closing zookeeper...")
+        zookeeper.shutdown()
+      } finally {
+        zookeeper = null
+      }
     }
   }
 
@@ -187,7 +206,7 @@ class KafkaTestUtils {
   private def brokerConfiguration: Properties = {
     val props = new Properties()
     props.put("broker.id", "0")
-    props.put("host.name", "localhost")
+    props.put("host.name", localhost)
     props.put("port", brokerPort.toString)
     props.put("log.dir", Utils.createTempDir().getAbsolutePath)
     props.put("zookeeper.connect", zkAddress)
@@ -262,14 +281,16 @@ class KafkaTestUtils {
       val splits = zkConnect.split(":")
       (splits(0), splits(1).toInt)
     }
-    val factory = new NIOServerCnxnFactory()
-    factory.configure(new InetSocketAddress(ip, port), 16)
+    var factory = new NIOServerCnxnFactory()
+    factory.configure(new InetSocketAddress(port), 16)
     factory.startup(zookeeper)
 
     val actualPort = factory.getLocalPort
 
     def shutdown() {
+      factory.closeAll()
       factory.shutdown()
+      factory = null
       Utils.deleteRecursively(snapshotDir)
       Utils.deleteRecursively(logDir)
     }
