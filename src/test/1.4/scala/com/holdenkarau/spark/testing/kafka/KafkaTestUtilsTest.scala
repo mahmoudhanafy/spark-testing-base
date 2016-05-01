@@ -31,8 +31,7 @@ import org.scalatest.junit.JUnitRunner
 import org.apache.spark.streaming.kafka.KafkaTestUtils
 
 @RunWith(classOf[JUnitRunner])
-class KafkaTestUtilsTest
-extends FunSuite with BeforeAndAfterAll{
+class KafkaTestUtilsTest extends FunSuite with BeforeAndAfterAll{
 
   private var kafkaTestUtils: KafkaTestUtils = _
 
@@ -50,7 +49,7 @@ extends FunSuite with BeforeAndAfterAll{
     val topic = "test-topic"
     val message = "HelloWorld!"
     kafkaTestUtils.createTopic(topic)
-    kafkaTestUtils.sendMessages(topic, message.getBytes)
+    kafkaTestUtils.sendMessages(topic, message)
 
     val consumerProps = new Properties()
     consumerProps.put("zookeeper.connect", kafkaTestUtils.zkAddress)
